@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Audit Desk (UK)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#111a18; --desk:#2c4741; --leather:#3a281e; --leather-hi:#54392a;
+  --hud:#0f1816; --hud-ink:#e8efe9; --hud-dim:#8fa59d;
+  --paper:#ebe9e1; --ink:#1c1a17;
+  --approve:#1f8a4c; --deny:#c4302b; --amber:#f0b429;
+  --panel:#f2f0e9; --panel-ink:#1c1a17; --panel-dim:#5b574f; --panel-line:#cfcabd;
+  --ui:'Barlow Condensed','Arial Narrow',system-ui,sans-serif;
+  --type:'Special Elite','Courier New',ui-monospace,monospace;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --panel:#1d2624; --panel-ink:#e8efe9; --panel-dim:#9bb0a8; --panel-line:#34443f; }
+}
+:root[data-theme="dark"]{ --panel:#1d2624; --panel-ink:#e8efe9; --panel-dim:#9bb0a8; --panel-line:#34443f; }
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--hud-ink);font-family:var(--ui);overflow:hidden}
+*,*::before,*::after{box-sizing:inherit}
+button{font:inherit;color:inherit;cursor:pointer}
+button:disabled{cursor:not-allowed}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+
+#app{height:100%;display:flex;flex-direction:column;min-height:0}
+
+/* HUD */
+#hud{display:grid;grid-template-columns:1.1fr 1fr 1.4fr 1fr;gap:12px;align-items:center;padding:8px 16px;background:var(--hud);border-bottom:0}
+.hud-cell{display:flex;flex-direction:column;line-height:1}
+.hud-cell small{color:var(--hud-dim);font-size:14px;font-weight:500;margin-top:3px}
+#timer{font-size:38px;font-weight:700;font-variant-numeric:tabular-nums}
+#timer.warn{color:#ff6b5e;animation:pulse 1s steps(2) infinite}
+@keyframes pulse{50%{opacity:.45}}
+#timebar{height:6px;background:#000}
+#timefill{height:100%;width:100%;background:var(--amber)}
+#timefill.warn{background:#ff6b5e}
+#strikes{display:flex;gap:6px}
+.slot{width:28px;height:28px;border:2px solid var(--hud-dim);border-radius:4px;display:grid;place-items:center;font-weight:700;font-size:20px;color:transparent}
+.slot.on{border-color:var(--deny);background:var(--deny);color:#fff;animation:shake .4s}
+#quota-wrap{display:flex;align-items:center;gap:10px}
+#quota-bar{flex:1;height:14px;background:#22302c;border-radius:2px;overflow:hidden;min-width:60px}
+#quota-fill{height:100%;width:0;background:var(--approve);transition:width .3s}
+#quota-n{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+#score{font-size:32px;font-weight:700;font-variant-numeric:tabular-nums}
+
+/* Request strip */
+#request{background:var(--leather);border-bottom:2px solid #000;padding:8px 16px;font-family:var(--type);font-size:15px;color:#f0e6d6;display:flex;gap:12px;justify-content:space-between;align-items:baseline}
+#request span:last-child{font-family:var(--ui);color:#c9b79f;font-size:16px;white-space:nowrap}
+
+/* Main */
+#main{flex:1;display:flex;min-height:0}
+#desk{position:relative;flex:1;min-width:0;overflow:hidden;
+  background:
+    radial-gradient(ellipse at 30% 10%,rgba(255,255,255,.07),transparent 60%),
+    repeating-linear-gradient(45deg,rgba(0,0,0,.05) 0 2px,transparent 2px 5px),
+    var(--desk);
+  box-shadow:inset 0 0 0 10px var(--leather),inset 0 0 0 12px #000,inset 0 0 40px rgba(0,0,0,.45)}
+#desk.thump{animation:thump .14s}
+@keyframes thump{25%{transform:translate(3px,4px)}60%{transform:translate(-2px,-2px)}}
+
+#side{width:270px;flex:none;background:var(--hud);border-left:2px solid #000;padding:12px;display:flex;flex-direction:column;gap:12px;overflow:auto}
+.rulebook{background:var(--paper);color:var(--ink);border-left:10px solid var(--deny);padding:10px 12px;font-family:var(--type);font-size:12.5px;line-height:1.35;box-shadow:0 3px 8px rgba(0,0,0,.4)}
+.rulebook h2{font-family:var(--ui);font-size:22px;margin:0 0 6px;font-weight:700}
+.rulebook details{margin:0 0 6px}
+.rulebook summary{font-family:var(--ui);font-weight:700;font-size:17px;cursor:pointer}
+.rulebook ol{margin:4px 0 0;padding-left:18px}
+.rulebook li{margin-bottom:6px}
+#calc{background:#1b2624;border:1px solid #2f403b;border-radius:6px;padding:8px}
+#calc output{display:block;background:#0b1211;color:#9bf0c0;font-variant-numeric:tabular-nums;font-size:26px;text-align:right;padding:4px 8px;border-radius:3px;min-height:38px;overflow:hidden;margin-bottom:6px;white-space:nowrap}
+#calc .keys{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+#calc button{background:#2b3c38;border:0;border-radius:3px;padding:6px 0;font-size:20px;font-weight:600}
+#calc button:hover{background:#3a504a}
+#calc button.op{background:#44584f}
+#calc button.eq{background:var(--amber);color:#1c1a17;grid-column:1/-1}
+#calc small{display:block;color:var(--hud-dim);font-size:14px;margin-top:6px;line-height:1.1}
+
+/* Documents */
+.doc{position:absolute;box-shadow:0 6px 16px rgba(0,0,0,.45);border-radius:2px;overflow:hidden;transform:rotate(var(--rot,0deg));user-select:none;-webkit-user-select:none;font-size:15px;transition:width .18s,font-size .18s}
+.doc.enter{animation:slidein .55s cubic-bezier(.2,.8,.25,1) both;animation-delay:var(--delay,0s)}
+@keyframes slidein{from{transform:translateX(-480px) rotate(-12deg);opacity:0}to{transform:translateX(0) rotate(var(--rot,0deg));opacity:1}}
+.doc.dragging{box-shadow:0 14px 28px rgba(0,0,0,.55);cursor:grabbing}
+.doc.zoomed{font-size:19px;width:calc(var(--dw) * 1.3) !important}
+.dh{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 8px;font-family:var(--ui);font-weight:700;font-size:1.15em;cursor:grab;touch-action:none}
+.dh .zoom{border:1px solid currentColor;background:transparent;border-radius:3px;padding:0 7px;font-size:.85em;font-weight:600;opacity:.85}
+.db{padding:6px 10px 10px}
+.row{display:block;padding:5px 6px 5px 10px;margin:2px 0;border-left:4px solid transparent;cursor:pointer;border-radius:2px;position:relative}
+.row:hover{background:rgba(255,200,0,.14)}
+.row .lbl{display:block;font-size:.8em;opacity:.65;font-weight:500}
+.row .val{display:block;line-height:1.25;word-break:break-word}
+.row.fine .val{font-size:.66em;line-height:1.2;opacity:.85}
+.row.flagged{border-left-color:var(--deny);background:rgba(196,48,43,.14)}
+.row.flagged::after{content:"\2691";position:absolute;right:6px;top:4px;color:var(--deny);font-size:1.1em}
+.num{border-bottom:2px dotted #0a7a55;cursor:copy;border-radius:2px}
+.num:hover{background:rgba(31,138,76,.25)}
+.skin-chat{background:#313338;color:#dbdee1;font-family:var(--ui)}
+.skin-chat .dh{background:#1e1f22;color:#dbdee1}
+.skin-chat .val{font-size:1.1em}
+.skin-chat .num{border-color:#7fe3b1}
+.skin-web{background:#f6f7f9;color:#1b2430;font-family:var(--ui)}
+.skin-web .dh{background:#dfe3ea;color:#1b2430}
+.skin-web .val{font-size:1.1em}
+.skin-bank{background:#ffffff;color:#14251c;font-family:var(--ui)}
+.skin-bank .dh{background:#1b6b48;color:#fff}
+.skin-bank .val{font-size:1.1em;font-weight:600}
+.skin-paper{background:var(--paper);color:var(--ink);font-family:var(--type)}
+.skin-paper .dh{background:#cfcabb;color:var(--ink)}
+.skin-paper .row.fine .val{font-family:var(--type)}
+.shake{animation:shake .4s}
+@keyframes shake{20%{transform:translateX(-6px) rotate(var(--rot,0deg))}40%{transform:translateX(6px) rotate(var(--rot,0deg))}60%{transform:translateX(-4px) rotate(var(--rot,0deg))}80%{transform:translateX(3px) rotate(var(--rot,0deg))}}
+
+/* Decision slip */
+#slip{position:absolute;right:22px;bottom:22px;width:250px;height:190px;background:#fbfaf5;color:var(--ink);z-index:5;padding:10px 12px;font-family:var(--type);box-shadow:0 4px 12px rgba(0,0,0,.45);transform:rotate(1.2deg)}
+#slip h3{margin:0 0 2px;font-family:var(--ui);font-size:21px}
+#slip p{margin:0;font-size:12px;opacity:.7}
+#slip .box{position:absolute;left:12px;right:12px;bottom:12px;top:62px;border:2px dashed #b9b4a4;display:grid;place-items:center;color:#a39e8d;font-size:13px;text-align:center;padding:6px}
+#slip.over .box{border-color:var(--amber);background:rgba(240,180,41,.12);color:#8a6a10}
+.ink{position:absolute;transform:translate(-50%,-50%) rotate(var(--r,0deg));font-family:var(--ui);font-weight:700;font-size:30px;padding:2px 10px;border:4px solid currentColor;border-radius:4px;opacity:.92;pointer-events:none;animation:slam .22s cubic-bezier(.3,1.6,.5,1) both;mix-blend-mode:multiply;white-space:nowrap}
+.ink.approve{color:var(--approve)} .ink.deny{color:var(--deny)}
+@keyframes slam{from{transform:translate(-50%,-50%) rotate(var(--r,0deg)) scale(1.9);opacity:0}}
+
+/* Tray */
+#tray{display:flex;align-items:center;flex-wrap:wrap;gap:12px 18px;padding:10px 16px;background:var(--leather);border-top:2px solid #000;background-image:linear-gradient(var(--leather-hi),var(--leather))}
+.stamp{display:flex;flex-direction:column;align-items:center;background:none;border:0;padding:0;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+.stamp .handle{width:38px;height:22px;background:#6b4a33;border-radius:12px 12px 2px 2px;border:2px solid #2a1a10}
+.stamp .face{font-weight:700;font-size:24px;padding:2px 14px;border:4px solid currentColor;border-radius:4px;background:#f4f1e6;min-width:136px;text-align:center}
+.stamp.approve{color:var(--approve)} .stamp.deny{color:var(--deny)}
+.stamp:hover .face{background:#fff}
+.stamp.ghost{position:fixed;z-index:1000;pointer-events:none;transform:translate(-50%,-70%) rotate(-5deg) scale(1.08);filter:drop-shadow(0 10px 8px rgba(0,0,0,.5))}
+#hold{display:flex;align-items:center;gap:10px;border:2px dashed #8a6a4f;border-radius:6px;padding:6px 10px;width:340px;max-width:100%}
+#hold-slot{font-size:15px;color:#e6d6c0;line-height:1.15;flex:1;min-width:90px}
+#hold-btn{background:var(--amber);color:#1c1a17;border:0;border-radius:4px;padding:6px 10px;font-weight:700;font-size:17px;white-space:nowrap}
+#hold-btn:disabled{opacity:.4}
+.tray-note{flex:1;min-width:180px;color:#d8c7b0;font-size:16px;line-height:1.2}
+#sound{background:rgba(0,0,0,.25);border:1px solid #6b4a33;border-radius:4px;padding:4px 10px;font-size:15px;color:#e6d6c0}
+
+/* Toast */
+#toast{position:fixed;left:50%;bottom:130px;transform:translateX(-50%) translateY(12px);background:#000;color:#fff;padding:8px 16px;border-radius:4px;font-size:18px;opacity:0;pointer-events:none;transition:.2s;z-index:900;max-width:90vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%)}
+
+/* Modals */
+.overlay{position:fixed;inset:0;background:rgba(6,12,10,.78);display:none;align-items:center;justify-content:center;padding:16px;z-index:800;overflow:auto}
+.overlay.open{display:flex}
+.modal{background:var(--panel);color:var(--panel-ink);border-radius:6px;max-width:660px;width:100%;max-height:92%;overflow:auto;padding:22px 26px;box-shadow:0 20px 50px rgba(0,0,0,.6);font-size:19px;line-height:1.3}
+.modal h1{margin:0;font-size:clamp(44px,8vw,68px);line-height:.95;font-weight:700}
+.modal h2{margin:0 0 6px;font-size:34px;line-height:1}
+.modal h2.ok{color:var(--approve)} .modal h2.bad{color:var(--deny)}
+.modal p{margin:8px 0}
+.lead{font-size:21px}
+.dim{color:var(--panel-dim)}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0 8px}
+.mode{text-align:left;background:transparent;border:2px solid var(--panel-ink);border-radius:4px;padding:12px 14px;color:var(--panel-ink)}
+.mode:hover{background:var(--panel-ink);color:var(--panel)}
+.mode b{display:block;font-size:26px;line-height:1}
+.mode span{display:block;font-size:16px;margin-top:4px}
+.mode .best{font-size:15px;opacity:.75;margin-top:6px}
+.opt{display:flex;align-items:center;gap:8px;font-size:18px;margin:8px 0 2px}
+.opt input{width:20px;height:20px;accent-color:var(--approve)}
+.howto{margin:10px 0 0;padding-left:20px;font-size:17px}
+.howto li{margin-bottom:3px}
+.small{font-size:15px}
+.btn{background:var(--panel-ink);color:var(--panel);border:0;border-radius:4px;padding:8px 22px;font-size:22px;font-weight:600;margin-top:10px;margin-right:8px}
+.btn.alt{background:transparent;color:var(--panel-ink);border:2px solid var(--panel-ink)}
+.pts{font-size:28px;font-weight:700;margin:2px 0}
+.pts.pos{color:var(--approve)} .pts.neg{color:var(--deny)}
+ul.finds{list-style:none;padding:0;margin:8px 0}
+ul.finds li{border-left:5px solid var(--panel-line);padding:4px 10px;margin:8px 0}
+ul.finds li.hit{border-color:var(--approve)} ul.finds li.miss{border-color:var(--deny)}
+ul.finds em{font-style:normal;font-size:15px;margin-left:6px;color:var(--panel-dim)}
+ul.finds p{margin:2px 0 0;font-size:17px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.stats div{border:1px solid var(--panel-line);border-radius:4px;padding:8px;text-align:center}
+.stats b{display:block;font-size:30px;line-height:1}
+.stats small{font-size:15px;color:var(--panel-dim)}
+.stars{font-size:38px;color:var(--amber);letter-spacing:4px}
+
+@media (max-width:860px){
+  #main{flex-direction:column}
+  #side{width:auto;flex-direction:row;border-left:0;border-top:2px solid #000;max-height:36%;gap:10px}
+  .rulebook{flex:1}
+  #calc{width:220px;flex:none}
+  #hud{grid-template-columns:1fr 1fr;gap:6px 12px}
+  #timer{font-size:30px}
+  #request{flex-direction:column;gap:2px}
+  #slip{width:200px;height:160px;right:10px;bottom:10px}
+  #slip .box{top:56px}
+  .modes{grid-template-columns:1fr}
+  .tray-note{display:none}
+  #toast{bottom:110px}
+}
+@media (prefers-reduced-motion: reduce){
+  .doc.enter,.ink,#desk.thump,.slot.on,.shake,#timer.warn{animation:none}
+  .doc{transition:none}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="hud">
+    <div class="hud-cell"><span id="timer">25</span><small id="timer-label">seconds left</small></div>
+    <div class="hud-cell"><div id="strikes" aria-label="Strikes"></div><small id="strike-label">Strikes</small></div>
+    <div class="hud-cell"><div id="quota-wrap"><div id="quota-bar"><div id="quota-fill"></div></div><span id="quota-n">0/0</span></div><small>Quota of correct stamps</small></div>
+    <div class="hud-cell"><span id="score">0</span><small>Score</small></div>
+  </header>
+  <div id="timebar"><div id="timefill"></div></div>
+  <div id="request"><span id="req-text"></span><span id="req-count"></span></div>
+  <main id="main">
+    <section id="desk" aria-label="Desk">
+      <div id="slip" data-layer="slip" aria-label="Decision slip">
+        <h3>Decision slip</h3>
+        <p id="slip-case">Case</p>
+        <div class="box" id="slip-box">Drop a stamp here</div>
+      </div>
+    </section>
+    <aside id="side">
+      <div class="rulebook"><h2>Rulebook</h2><div id="rules"></div></div>
+      <div id="calc" hidden>
+        <output id="calc-out" aria-label="Calculator display">0</output>
+        <div class="keys" id="calc-keys"></div>
+        <small>Tip: click an underlined number on any paper to send it here. Type 20% to take a percentage.</small>
+      </div>
+    </aside>
+  </main>
+  <footer id="tray">
+    <button class="stamp approve" data-verdict="APPROVE" aria-label="Approve stamp. Drag onto the decision slip, or press Enter to stamp it."><span class="handle"></span><span class="face">APPROVE</span></button>
+    <button class="stamp deny" data-verdict="DENY" aria-label="Deny stamp. Drag onto the decision slip, or press Enter to stamp it."><span class="handle"></span><span class="face">DENY</span></button>
+    <div id="hold"><div id="hold-slot">Hold tray is empty</div><button id="hold-btn" type="button">Hold this case</button></div>
+    <div class="tray-note" id="tray-note"></div>
+    <button id="sound" aria-pressed="true">Sound on</button>
+  </footer>
+</div>
+<div id="toast" role="status"></div>
+
+<div class="overlay open" id="menu"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="menu-title">
+  <h1 id="menu-title">The Audit Desk</h1>
+  <p class="lead">Papers come in. Cross-check them against the rulebook, spot the trap, and stamp your decision before the case timer runs out.</p>
+  <div class="modes">
+    <button class="mode" data-mode="easy"><b>The Scam Checker</b><span>Ages 13 to 16. Texts, emails, marketplaces and payments. Spot the scam.</span><div class="best" id="best-easy"></div></button>
+    <button class="mode" data-mode="hard"><b>The Underwriter</b><span>Ages 16 to 18. Payslips, tenancies, car finance and cards. Do the sums, find the hidden costs.</span><div class="best" id="best-hard"></div></button>
+  </div>
+  <label class="opt"><input type="checkbox" id="extra"> Extra time (+50% on every case)</label>
+  <ul class="howto">
+    <li>Each case has its own countdown. Run out of time and it counts as a strike.</li>
+    <li>Every 3 correct stamps in a row, the countdown gets 2 seconds shorter.</li>
+    <li>Stuck? Put one case on the hold tray and come back to it.</li>
+    <li>Flagging the lines that expose a problem earns bonus points. Every shift is freshly generated, so the answers change each time.</li>
+  </ul>
+  <p class="dim small">Rules and figures follow England in the 2026/27 tax year. Fictional cases, for learning. This is not financial advice.</p>
+</div></div>
+
+<div class="overlay" id="report"><div class="modal" role="dialog" aria-modal="true" id="report-body"></div></div>
+<div class="overlay" id="summary"><div class="modal" role="dialog" aria-modal="true" id="summary-body"></div></div>
+
+<script>
+/*GEN-START*/
+/* ===================== Procedural case generators ===================== */
+const R = a => a[Math.floor(Math.random()*a.length)];
+const ri = (a,b) => a + Math.floor(Math.random()*(b-a+1));
+const chance = p => Math.random() < p;
+const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+const gbp = n => { const neg=n<0; n=Math.abs(n); const s = Number.isInteger(n) ? n.toLocaleString('en-GB') : n.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2}); return (neg?'-':'')+'\u00A3'+s; };
+const r5 = n => Math.round(n/5)*5;
+const dayS = n => n+' day'+(n>1?'s':'');
+const ukPhone = () => '07700 900'+ri(100,999);
+const FIRST=['Sam','Jordan','Alex','Riley','Taylor','Casey','Morgan','Drew','Jess','Ellie','Amara','Tariq','Priya','Callum','Megan','Ffion','Connor','Aisha','Liam','Niamh','Kieran','Zara','Harvey','Imogen','Rhys','Sana'];
+const LAST=['Whitaker','Patel','Jones','Okafor','Hughes','Campbell','Begum','Murray','Evans','Kowalski','Ahmed','Fraser','Nguyen','Davies','Clarke','Osei'];
+const EMP=['Ridgeline Auto Parts','Harbour Logistics','Northgate Dental','Summit Builders','Lakeside Cafe','Bright Smile Nursery','Metro Bus Services','Greenfield Garden Centre'];
+
+const doc = (id,skin,title,rows) => ({id,skin,title,rows:rows.map(r=>({id:r[0],l:r[1],v:r[2],f:!!r[3]}))});
+const D = (title,concept,refs,explain) => ({title,concept,refs,explain});
+const C = o => Object.assign({discs:[],rationale:'',concept:'',groups:[],tip:''},o);
+const flagSet = (list,min,max=list.length) => { const n=ri(min,Math.min(max,list.length)); const s=shuffle(list).slice(0,n); const o={}; list.forEach(k=>o[k]=s.includes(k)); return o; };
+const acctAge = newer => { if(newer){ const n=ri(1,9); return 'Created '+dayS(n)+' ago'; } return 'Created '+ri(2,5)+' years ago'; };
+const bankDoc = (bal,pend,title='Debit account',label='Pending') => doc('d3','bank',title,[['bal','Balance',gbp(bal)],['pend',label,pend]]);
+
+/* ---------- Easy: Scam Checker templates (each returns a scam or a legitimate case) ---------- */
+const tDiscord = v => {
+  const nm=R(FIRST);
+  if(v==='scam'){
+    const f=flagSet(['newacct','urgent','fee'],1);
+    const base=R(['claim-nitro.com','nitro-drop.net','gift-claims.xyz','free-nitro.gift']), pre=R(['discord-gifts','discord-nitro','nitro-rewards']);
+    const mins=R([10,15,20]), fee=R([0.99,1.99,2.49,2.99]), bal=R([6.3,9.4,11.75,14.2]);
+    const docs=[
+      doc('d1','chat','Discord DM',[['from','From',R(['NitroGiveaways_Official','DiscordGifts_Team','NitroDropsHQ'])],['age','Account age',acctAge(f.newacct)],['msg','Message',f.urgent?`You WON 3 months of Nitro! Claim within ${mins} minutes or it expires!`:'You won 3 months of Nitro! Claim your prize at the link below.'],['link','Link',`https://${pre}.${base}/login`]]),
+      doc('d2','web','Link Inspector',[['dom','Real website name',base],['reg','Website registered',dayS(ri(1,9))+' ago'],['ask','Page asks for','Discord email, password and card details \u201Cto verify you\u201D']]),
+      bankDoc(bal, f.fee?`${gbp(fee)} \u201Cverification fee\u201D awaiting your approval`:'None')
+    ];
+    const discs=[
+      D('Lookalike website','Spotting fake websites',['d1:link','d2:dom'],`\u201C${pre}\u201D is only a label at the front. The real website is ${base}, which has nothing to do with Discord.`),
+      D('Password and card request','Credential phishing',['d2:ask'],'Real giveaways never need your password or card details.'),
+      D('Brand-new website','Sender reputation',['d2:reg'],'The website was registered days ago. Real companies have been around for years.')
+    ];
+    if(f.newacct) discs.push(D('Brand-new account','Sender reputation',['d1:age'],'The sender\u2019s account is only days old.'));
+    if(f.urgent) discs.push(D('Fake urgency','Pressure tactics',['d1:msg'],'A countdown is meant to stop you from thinking.'));
+    if(f.fee) discs.push(D('Fee to claim a prize','Advance-fee scams',['d3:pend'],`Paying a fee to get a prize is the scam itself, and it would take most of a ${gbp(bal)} balance.`));
+    return C({clerk:`${nm} wants to log in to claim a free Nitro prize.`,verdict:'DENY',docs,discs,groups:['g'],tip:'Report scam DMs to the platform and block the sender.'});
+  }
+  const yrs=ri(2,6), friend=R(FIRST);
+  return C({clerk:`${nm} got a gift link from a friend. Open it?`,verdict:'APPROVE',docs:[
+    doc('d1','chat','Discord DM',[['from','From',`${friend} (friend since ${2026-yrs})`],['age','Account age',acctAge(false)],['msg','Message',R(['happy birthday! got you something, no rush','saw this and thought of you, enjoy','thanks for helping with the project!'])],['link','Link',`https://discord.com/gifts/${R(['xK9f2','Pq7dL','m3WzA'])}`]]),
+    doc('d2','web','Link Inspector',[['dom','Real website name','discord.com'],['reg','Website registered','Over 10 years ago'],['ask','Page asks for','Nothing. You redeem it while already logged in.']]),
+    bankDoc(R([30,45,52.8,60]),'None')
+  ],rationale:'The sender is a long-time friend, the link is on the real discord.com, there is no deadline, and nobody is asking for money or a password.',concept:'Recognising legitimate requests',groups:['g']});
+};
+
+const tSteam = v => {
+  const nm=R(FIRST);
+  if(v==='scam'){
+    const f=flagSet(['newacct','urgent'],0);
+    const fake=R([['steamcommunlty.com','a lowercase L in place of the I'],['steamcomrnunity.com','an \u201Cr\u201D and \u201Cn\u201D side by side in place of the M'],['steamcommunitty.com','a doubled T']]);
+    return C({clerk:`${nm} got a free-skin trade offer. Sign in to accept?`,verdict:'DENY',docs:[
+      doc('d1','chat','Trade offer chat',[['from','From',`xX_${R(['Skins','Loot','Drops'])}_Dealer_Xx`],['age','Account age',acctAge(f.newacct)],['msg','Message',`Free ${R(['knife','skin bundle','rare gloves'])} for your inventory! Just sign in to confirm the trade.${f.urgent?' Offer ends in 5 minutes.':''}`],['link','Link',`https://${fake[0]}/tradeoffer/${ri(1000,9999)}`]]),
+      doc('d2','web','Link Inspector',[['dom','Real website name',fake[0]],['reg','Website registered',dayS(ri(2,9))+' ago'],['ask','Page asks for','Steam login and Steam Guard code']]),
+      bankDoc(R([5.4,8.4,12.1]),'None','Steam wallet')
+    ],discs:[
+      D('Lookalike spelling','Spotting fake websites',['d1:link','d2:dom'],`The real site is steamcommunity.com. This one uses ${fake[1]}.`),
+      D('Login and code request','Credential phishing',['d2:ask'],'Handing over your login plus Guard code lets the scammer take over the account.'),
+      D('Brand-new website','Sender reputation',['d2:reg'],'The website was registered days ago.'),
+      ...(f.newacct?[D('Brand-new account','Sender reputation',['d1:age'],'A days-old account pushing a \u201Cfree\u201D item is a red flag.')]:[]),
+      ...(f.urgent?[D('Fake urgency','Pressure tactics',['d1:msg'],'Five minutes is not enough time to check a link.')]:[])
+    ],groups:['g'],tip:'Never sign in through a link someone sends you. Open the app or site yourself.'});
+  }
+  const g=R([['Hades',4.99],['Stardew Valley',6.49],['Celeste',3.99],['Hollow Knight',6.99]]);
+  return C({clerk:`${nm} bought a game in a sale. Approve the payment?`,verdict:'APPROVE',docs:[
+    doc('d1','paper','Order receipt',[['from','From','store.steampowered.com'],['msg','Item',`${g[0]}, ${gbp(g[1])}`],['how','Started by',`${nm} clicked Buy in the store just now`]]),
+    doc('d2','web','Link Inspector',[['dom','Real website name','steampowered.com'],['reg','Website registered','Over 15 years ago'],['ask','Page asks for','Payment confirmation only. No password.']]),
+    bankDoc(R([30,45,60]),`${gbp(g[1])} Steam purchase`)
+  ],rationale:'The purchase was started by the account holder, the amount matches the receipt, the site is the real long-established one, and the balance covers it.',concept:'Recognising legitimate requests',groups:['g']});
+};
+
+const tRoyalMail = v => {
+  const nm=R(FIRST), trk=()=>R(['AB','QT','JD','ZW'])+ri(100000000,999999999)+'GB';
+  const item=R(['Trainers, size 6','Phone case','Hoodie','Gaming headset']), shop=R(['Kicks & Co','TechNest','Urban Threads','GameHut']);
+  if(v==='scam'){
+    const f=flagSet(['trackmismatch','paid','carrier'],1), fee=R([1.49,1.99,2.49]), t1=trk(), t2=f.trackmismatch?trk():t1;
+    const dom=R(['royal-mail-redeliver.info','royalmail-parcel-fee.top','rmail-delivery.co']);
+    const carrier=f.carrier?R(['Evri','DPD','Yodel']):'Royal Mail';
+    return C({clerk:`${nm} got a text about an unpaid parcel fee.`,verdict:'DENY',docs:[
+      doc('d1','chat','Text message',[['from','From',`${ukPhone()} (not a number you know)`],['msg','Message',`Royal Mail: Your package has an unpaid ${gbp(fee)} shipping fee. Pay now or it will be returned.`],['trk','Tracking number quoted',t1],['link','Link',`https://${dom}/pay`]]),
+      doc('d2','paper','Order confirmation',[['shop','From',`${shop} (online shop)`],['item','Order',item],['ship','Delivery',f.paid?`Paid at checkout: ${gbp(3.49)}`:'Standard, no extra charges due'],['carrier','Carrier',carrier],['trk','Tracking number',t2]]),
+      doc('d3','web','Link Inspector',[['dom','Real website name',dom],['reg','Website registered',dayS(ri(1,6))+' ago'],['ask','Page asks for','Card number, expiry date and security code']])
+    ],discs:[
+      D('Lookalike website','Spotting fake websites',['d1:link','d3:dom','d3:reg'],`Royal Mail\u2019s real site is royalmail.com. This one is ${dom}, registered days ago.`),
+      D('Card details on the wrong site','Credential phishing',['d3:ask'],'A fake \u201Cfee\u201D page exists to collect your card details.'),
+      ...(f.trackmismatch?[D('Tracking number does not match','Cross-checking documents',['d1:trk','d2:trk'],'The number in the text is not the number on your order confirmation.')]:[]),
+      ...(f.carrier?[D('Wrong carrier','Cross-checking documents',['d2:carrier'],`Your order shipped with ${carrier}, so a Royal Mail fee text does not fit.`)]:[]),
+      ...(f.paid?[D('Delivery already paid','Cross-checking documents',['d2:ship'],'You already paid for delivery at checkout.')]:[])
+    ],groups:['g'],tip:'Forward scam texts to 7726 (free). Check parcels using the tracking number on your order email.'});
+  }
+  const t=trk();
+  return C({clerk:`${nm} got a delivery text. Safe to tap the link?`,verdict:'APPROVE',docs:[
+    doc('d1','chat','Text message',[['from','From','RoyalMail'],['msg','Message','Royal Mail: Your parcel is out for delivery today. No action needed.'],['trk','Tracking number quoted',t],['link','Link','https://www.royalmail.com/track-your-item']]),
+    doc('d2','paper','Order confirmation',[['shop','From',`${shop} (online shop)`],['item','Order',item],['ship','Delivery','Free delivery'],['carrier','Carrier','Royal Mail'],['trk','Tracking number',t]]),
+    doc('d3','web','Link Inspector',[['dom','Real website name','royalmail.com'],['reg','Website registered','Over 15 years ago'],['ask','Page asks for','Nothing. Tracking only.']])
+  ],rationale:'The tracking number and carrier match your order, the link goes to the real royalmail.com, and nothing asks for money or card details.',concept:'Recognising legitimate requests',groups:['g']});
+};
+
+const tHMRC = v => {
+  const nm=R(FIRST), gross=R([480,560,640,720,840,920]), emp=R(['Corner Cafe','Fresh Fields Garden Centre','Sunny Days Nursery']);
+  if(v==='scam'){
+    const f=flagSet(['urgent'],0), amt=R([185,250,310]);
+    const fk=R([['refunds@hmrc-gov-uk.com','hmrc-gov-uk.com'],['noreply@hmrc-refund.org','hmrc-refund.org'],['service@hmrc.gov.uk.refund-claims.com','refund-claims.com']]);
+    return C({clerk:`${nm} got an email saying HMRC owes ${amt>200?'them':'them'} a tax refund.`,verdict:'DENY',docs:[
+      doc('d1','web','Email',[['from','From',fk[0]],['msg','Message',`HMRC owes you ${gbp(amt)} in overpaid tax. Submit your bank details to claim${f.urgent?' within 24 hours':''}.`],['link','Link',`https://${fk[1]}/claim`]]),
+      doc('d2','paper','Part-time payslip',[['emp','Employer',emp],['gross','Gross pay',`${gbp(gross)} / month`],['tax','Income tax (code 1257L)','\u00A30'],['net','Take-home pay',`${gbp(gross)} / month`]]),
+      doc('d3','web','Link Inspector',[['dom','Real website name',fk[1]],['reg','Website registered',dayS(ri(1,8))+' ago'],['ask','Page asks for','Bank account number and sort code']])
+    ],discs:[
+      D('Fake sender address','Spotting fake websites',['d1:from','d3:dom'],`Genuine government addresses end in .gov.uk. This sender\u2019s real domain is ${fk[1]}.`),
+      D('No tax to refund','Cross-checking documents',['d2:gross','d2:tax'],`${nm} earns ${gbp(gross)} a month. The tax-free amount is \u00A31,048 a month, so no income tax was taken. There is nothing to refund.`),
+      D('Bank details by email','Credential phishing',['d1:msg','d3:ask'],'HMRC does not email you a link and ask for your bank details. Claims are made by signing in on GOV.UK or the HMRC app.'),
+      ...(f.urgent?[D('Fake urgency','Pressure tactics',['d1:msg'],'A 24-hour deadline is a pressure tactic.')]:[])
+    ],groups:['g'],tip:'Forward suspicious emails to report@phishing.gov.uk.'});
+  }
+  const g2=R([1250,1400,1500]), tax=Math.round(.2*Math.max(0,g2-1048));
+  return C({clerk:`${nm} wants to check for a tax refund on the official GOV.UK site. They typed the address themselves.`,verdict:'APPROVE',docs:[
+    doc('d1','web','Browser address bar',[['addr','Address typed','https://www.gov.uk/claim-tax-refund'],['how','How they got there','Typed it in. No email, text or link involved.'],['ask','Page asks for','Government Gateway sign-in (on gov.uk), nothing else']]),
+    doc('d2','paper','Payslip',[['emp','Employer',emp],['gross','Gross pay',`${gbp(g2)} / month`],['tax','Income tax (code 1257L)',gbp(tax)],['net','Take-home pay',`${gbp(g2-tax)} / month`]]),
+    doc('d3','web','Link Inspector',[['dom','Real website name','gov.uk'],['reg','Website registered','Over 20 years ago'],['ask','Page asks for','Government Gateway sign-in, on gov.uk']])
+  ],rationale:`${nm} started this themselves, the website ends in .gov.uk, and nobody messaged them a link. Checking your own tax on the official site is safe.`,concept:'Recognising legitimate requests',groups:['g']});
+};
+
+const tResale = v => {
+  const nm=R(FIRST), plat=R(['Vinted','Depop']), item=R(['Nike trainers, size 5','Adidas Sambas, size 6','Puffer jacket','Hoodie']), price=R([25,30,35,40,45,55]);
+  const buyer=`${R(['Chris','Dee','Lee','Kay'])}_${R(['Thrifts','Buys','Finds'])}${ri(10,99)}`;
+  const listing=doc('d2','paper','Your listing',[['item','Item',item],['price','Price',gbp(price)],['pay','Payment set up on listing',`In-app checkout. ${plat} holds the money until the buyer confirms.`]]);
+  if(v==='scam'){
+    const f=flagSet(['newacct','rush'],0);
+    return C({clerk:`${nm} is selling ${item} on ${plat}.`,verdict:'DENY',docs:[
+      doc('d1','chat',`${plat} chat`,[['from','From',buyer],['age','Account age',f.newacct?`Joined ${dayS(ri(1,6))} ago, no reviews`:`Joined ${ri(1,3)} years ago`],['msg','Message',`Hi! I\u2019ll pay ${gbp(price)} for the ${item}, but can you take PayPal Friends & Family? Saves us both the fees.${f.rush?' I need it today so please send now!':''}`]]),
+      listing,
+      doc('d3','bank','Payment request',[['method','Method requested','PayPal Friends & Family (outside the app)'],['prot','Protection','None. No refunds and no dispute help.']])
+    ],discs:[
+      D('Payment outside the app','Staying inside the platform',['d1:msg','d2:pay','d3:method'],`The listing uses ${plat}\u2019s checkout. Moving to PayPal removes the platform\u2019s protection, and the \u201Csaves fees\u201D line is the lure.`),
+      D('No protection','Staying inside the platform',['d3:prot'],'Friends & Family payments are meant for people you know and are not covered by buyer protection.'),
+      ...(f.newacct?[D('Brand-new buyer','Sender reputation',['d1:age'],'The buyer\u2019s account is days old with no reviews.')]:[]),
+      ...(f.rush?[D('Rushing you','Pressure tactics',['d1:msg'],'\u201CSend now\u201D is meant to stop you checking.')]:[])
+    ],groups:['g'],tip:'Keep every chat and payment inside the app.'});
+  }
+  return C({clerk:`${nm} is selling ${item} on ${plat}.`,verdict:'APPROVE',docs:[
+    doc('d1','chat',`${plat} chat`,[['from','From',buyer],['age','Account age',`Joined ${ri(2,4)} years ago, ${ri(20,80)} positive reviews`],['msg','Message',`Hi! I\u2019d like the ${item}. I\u2019ll pay through the app checkout.`]]),
+    listing,
+    doc('d3','bank','Payment',[['method','Method used','In-app checkout'],['prot','Protection',`${plat} holds the money until the item arrives.`]])
+  ],rationale:'The buyer is established, pays through the app checkout the listing sets up, and buyer and seller protections stay in place.',concept:'Recognising legitimate requests',groups:['g']});
+};
+
+const tBank = v => {
+  const nm=R(FIRST), BK=R([['Hillside Bank','hillside'],['Northfield Bank','northfield'],['Marlow Building Society','marlow']]);
+  if(v==='scam'){
+    const dom=`${BK[1]}-secure-verify.${R(['co','top','info'])}`;
+    return C({clerk:`${nm} got a text about a \u201Clocked\u201D bank account.`,verdict:'DENY',docs:[
+      doc('d1','chat','Text message',[['num','From',`${ukPhone()} (not your bank\u2019s saved number)`],['msg','Message',`ALERT from ${BK[0]}: suspicious login. Verify your PIN now or your account will be frozen.`],['link','Link',`https://${dom}/pin`]]),
+      doc('d2','web','Link Inspector',[['dom','Real website name',dom],['reg','Website registered',dayS(ri(1,3))+' ago'],['ask','Page asks for','Card number and PIN']]),
+      doc('d3','bank','Debit account',[['bal','Balance',gbp(R([120,230,310]))],['note','Your bank\u2019s real website',`${BK[1]}.co.uk`]])
+    ],discs:[
+      D('Unknown sender number','Sender reputation',['d1:num'],'The text did not come from a number your bank uses.'),
+      D('PIN request','Credential phishing',['d2:ask'],'Banks never ask for your PIN by text or on a web page.'),
+      D('Threat and deadline','Pressure tactics',['d1:msg'],'Threatening to freeze your account pushes you to act before checking.'),
+      D('Brand-new lookalike site','Spotting fake websites',['d1:link','d2:dom','d2:reg'],`Your bank\u2019s real site is ${BK[1]}.co.uk. This one was registered days ago.`)
+    ],groups:['g'],tip:'Banks never ask for your PIN. If unsure, hang up or ignore the text and call 159, the UK anti-fraud line that connects you to your bank.'});
+  }
+  const amt=R([8.99,12.49,19.99,24.5]), shop=R(['Zara','Greggs','Pure Gym','Boots']);
+  return C({clerk:`${nm} got a banking app alert asking to confirm a payment.`,verdict:'APPROVE',docs:[
+    doc('d1','chat','Banking app notification',[['num','From',`${BK[0]} app (push notification)`],['msg','Message',`Did you just pay ${gbp(amt)} at ${shop}? Open the app to confirm.`],['link','Link','None. You open the app yourself.']]),
+    doc('d2','web','Link Inspector',[['dom','Real website name','No link to check'],['reg','Website registered','Not applicable'],['ask','Page asks for','Nothing. You confirm inside the app.']]),
+    doc('d3','bank','Debit account',[['bal','Balance',gbp(R([120,230,310]))],['note','Recent card payment',`${gbp(amt)} at ${shop}, 2 minutes ago (made by you)`]])
+  ],rationale:'The alert matches a payment the account holder just made, there is no link, and everything happens inside the bank\u2019s own app.',concept:'Recognising legitimate requests',groups:['g']});
+};
+
+const tGame = v => {
+  const nm=R(FIRST);
+  if(v==='scam'){
+    const p=R([{n:'Roblox',c:'Robux',real:'roblox.com',a:'10,000'},{n:'Fortnite',c:'V-Bucks',real:'epicgames.com',a:'13,500'}]);
+    const base=R(['free-gifts.net','gift-zone.xyz','claim-now.top']), f=flagSet(['newacct'],0);
+    return C({clerk:`${nm} found a free ${p.c} generator. Enter the username and password?`,verdict:'DENY',docs:[
+      doc('d1','chat','Discord DM',[['from','From',R(['FreeGifts_Bot','GiftGenie'])],['age','Account age',acctAge(f.newacct)],['msg','Message',`Get ${p.a} ${p.c} FREE! Just enter your username and password on our generator.`],['link','Link',`https://${R(['generator','free-gen','claim'])}.${base}/`]]),
+      doc('d2','web','Link Inspector',[['dom','Real website name',base],['reg','Website registered',dayS(ri(2,9))+' ago'],['ask','Page asks for',`${p.n} username and password`]]),
+      bankDoc(R([18,22,27.5]),'None','Parent-linked card')
+    ],discs:[
+      D('Password request','Credential phishing',['d1:msg','d2:ask'],`No generator can create ${p.c}. The page only wants your login.`),
+      D('Too good to be true','Pressure tactics',['d1:msg'],`${p.a} free ${p.c} is bait.`),
+      D('Not the real site','Spotting fake websites',['d1:link','d2:dom'],`The real website name is ${base}, not ${p.real}.`),
+      ...(f.newacct?[D('Brand-new sender','Sender reputation',['d1:age'],'The sender\u2019s account is days old.')]:[])
+    ],groups:['g'],tip:'Only ever buy in-game currency inside the game or its official store.'});
+  }
+  const sch=R(['oakfield-academy','lincoln-high','riverside-school']), amt=R([12,15,18,20]);
+  return C({clerk:`${nm} needs to pay for the school trip online.`,verdict:'APPROVE',docs:[
+    doc('d1','web','Email from school',[['from','From',`office@${sch}.sch.uk (in your school contacts)`],['msg','Message',`Year 9 museum trip: ${gbp(amt)} due by Friday. Pay on the school payment site.`],['link','Link',`https://${sch}.sch.uk/payments`]]),
+    doc('d2','web','Link Inspector',[['dom','Real website name',`${sch}.sch.uk`],['reg','Website registered','Since 2006'],['ask','Page asks for','Payment only. No password.']]),
+    bankDoc(R([25,35,40]),`${gbp(amt)} school trip`)
+  ],rationale:'The email is from the school\u2019s real address and website, the deadline is days away rather than minutes, and the amount matches what was pending.',concept:'Recognising legitimate requests',groups:['g']});
+};
+
+const tOverpay = v => {
+  const nm=R(FIRST), item=R(['hoodie','game controller','jacket','speaker']), price=R([40,50,60]), pay=price+R([100,150,200]);
+  const buyer=`${R(['Chris','Dee','Lee','Kay'])}_Buyer${ri(10,99)}`;
+  if(v==='scam'){
+    return C({clerk:`${nm} sold a ${item} online. The buyer says they overpaid.`,verdict:'DENY',docs:[
+      doc('d1','chat','Marketplace chat',[['from','From',buyer],['age','Account age',`Joined ${dayS(ri(1,4))} ago`],['msg','Message',`Oops, I sent ${gbp(pay)} for your ${gbp(price)} ${item}. Send ${gbp(pay-price)} back now please!`]]),
+      doc('d2','bank','Payment notice',[['amt','Amount',gbp(pay)],['status','Status','PENDING. Not yet in your account.']]),
+      bankDoc(pay+ri(10,20),`Request: send ${gbp(pay-price)} to ${buyer}`)
+    ],discs:[
+      D('Payment has not cleared','Overpayment scams',['d2:status'],`Pending payments can be fake or reversed. You would be sending ${gbp(pay-price)} of your own money for nothing.`),
+      D('Brand-new buyer','Sender reputation',['d1:age'],'The buyer\u2019s account is days old.'),
+      D('Pressure to refund fast','Pressure tactics',['d1:msg'],'Real buyers can wait while the payment clears.')
+    ],groups:['g'],tip:'Never refund or post anything until the money is cleared in your own account.'});
+  }
+  return C({clerk:`${nm} sold a ${item}. Send it to the buyer?`,verdict:'APPROVE',docs:[
+    doc('d1','chat','Marketplace chat',[['from','From',buyer],['age','Account age',`Joined ${ri(2,4)} years ago`],['msg','Message',`Thanks! Paid the full ${gbp(price)}. Can you post it tomorrow?`]]),
+    doc('d2','bank','Payment notice',[['amt','Amount',gbp(price)],['status','Status','CLEARED. In your account.']]),
+    bankDoc(price+ri(10,20),'None')
+  ],rationale:'The exact price has cleared in the seller\u2019s account, the buyer has history, and nobody is asking for money back.',concept:'Recognising legitimate requests',groups:['g']});
+};
+
+const tFee = v => {
+  const nm=R(FIRST);
+  if(v==='scam'){
+    const f=flagSet(['newacct'],0), pay=R([200,300,500]), fee=R([5,10,15]), bal=R([8.75,9.75,12.4]);
+    const dom=`${R(['brand-deals-agency','influencer-collabs','creator-payouts'])}.${R(['xyz','top','click'])}`;
+    return C({clerk:`${nm} got an offer to be a paid brand ambassador.`,verdict:'DENY',docs:[
+      doc('d1','chat','Instagram DM',[['from','From',R(['BrandDeals_Agency','CreatorCollabs_UK'])],['age','Account age',acctAge(f.newacct)],['msg','Message',`We\u2019ll pay you ${gbp(pay)} to promote our drink. First, send a ${gbp(fee)} verification fee.`]]),
+      doc('d2','web','Agency website',[['dom','Real website name',dom],['reg','Website registered',dayS(ri(1,6))+' ago'],['ask','Fee must be paid by','Gift card codes']]),
+      bankDoc(bal,`Request: ${gbp(fee)} \u201Cverification fee\u201D`)
+    ],discs:[
+      D('Pay to get paid','Advance-fee scams',['d1:msg','d3:pend'],'Legitimate sponsors pay you. They never charge a fee first.'),
+      D('Gift card payment','Advance-fee scams',['d2:ask'],'Gift cards are hard to trace, which is why scammers demand them.'),
+      D('Brand-new website','Sender reputation',['d2:reg'],'The agency\u2019s website is days old.'),
+      ...(f.newacct?[D('Brand-new account','Sender reputation',['d1:age'],'The account is days old, with no track record.')]:[])
+    ],groups:['g'],tip:'Real brand deals never start with you paying.'});
+  }
+  const p=R(['5.99','6.99','7.99']);
+  return C({clerk:`${nm}\u2019s music plan renews today. Approve the charge?`,verdict:'APPROVE',docs:[
+    doc('d1','web','Email receipt',[['from','From','no-reply@spotify.com'],['msg','Message',`Your Premium Student plan renews today: \u00A3${p}`],['link','Link','https://www.spotify.com/account']]),
+    doc('d2','web','Link Inspector',[['dom','Real website name','spotify.com'],['reg','Website registered','Over 15 years ago'],['ask','Page asks for','Nothing. Sign in only if you choose to manage your plan.']]),
+    bankDoc(R([35,45,52]),`\u00A3${p} Spotify (same as last month)`)
+  ],rationale:'This is an expected renewal: real domain, the same amount as last month, no demands, and plenty of balance.',concept:'Recognising legitimate requests',groups:['g']});
+};
+
+const tFamily = v => {
+  const nm=R(FIRST), rel=R(['Mum','Dad']), saved=ukPhone();
+  if(v==='scam'){
+    const n2=ukPhone(), amt=R([120,180,240,350]), payee=R(['M. Hall','R. Adeyemi','T. Brooks']), f=flagSet(['nocall'],0);
+    return C({clerk:`${nm} got a WhatsApp from \u201C${rel}\u201D on a new number asking for money.`,verdict:'DENY',docs:[
+      doc('d1','chat','WhatsApp',[['from','From',`Unknown number ${n2}`],['msg','Message',`Hi ${rel}, I dropped my phone in a puddle so this is my new number. Can you send ${gbp(amt)} for a bill today? I\u2019ll pay you back!${f.nocall?' Can\u2019t talk right now, just send it please.':''}`]]),
+      doc('d2','paper','Saved contacts',[['saved',`${rel}\u2019s saved number`,saved],['you','Number messaging you',n2]]),
+      doc('d3','bank','Payment request',[['to','Bank transfer to',payee],['amt','Amount',gbp(amt)],['cop','Name check',`No match: the account name is not ${rel}\u2019s`]])
+    ],discs:[
+      D('New number claims to be family','Sender reputation',['d1:from','d2:saved','d2:you'],`The number messaging you is not ${rel}\u2019s saved number. Call the saved number before you do anything.`),
+      D('Account name does not match','Cross-checking documents',['d3:to','d3:cop'],'Your bank\u2019s name check shows the money would go to someone else.'),
+      D('Money and urgency','Pressure tactics',['d1:msg'],'Asking for money \u201Ctoday\u201D is how these scams work.')
+    ],groups:['g'],tip:'Call the person on the number you already have. Report scam messages to 7726.'});
+  }
+  return C({clerk:`${nm}\u2019s ${rel} sent a message about a \u00A320 top-up.`,verdict:'APPROVE',docs:[
+    doc('d1','chat','WhatsApp',[['from','From',`${rel} (saved contact)`],['msg','Message','Just sent you \u00A320 for lunch money. Check your account!']]),
+    doc('d2','paper','Saved contacts',[['saved',`${rel}\u2019s saved number`,saved],['you','Number messaging you',saved]]),
+    doc('d3','bank','Incoming payment',[['to','From',`${rel}\u2019s account`],['amt','Amount','\u00A320.00'],['cop','Name check','Match: the name is the one you know']])
+  ],rationale:'The message comes from the saved number, the payment is money coming in (not out), and the name matches.',concept:'Recognising legitimate requests',groups:['g']});
+};
+
+const EASY_T=[tDiscord,tSteam,tRoyalMail,tHMRC,tResale,tBank,tGame,tOverpay,tFee,tFamily];
+function buildEasy(){
+  const deny=new Set(shuffle([0,1,2,3,4,5,6,7,8,9]).slice(0,6));
+  return shuffle(EASY_T.map((t,i)=>t(deny.has(i)?'scam':'ok')));
+}
+
+/* ---------- Hard: Underwriter templates (verdict derived from the rules) ---------- */
+const PLAN={'Plan 2':2449,'Plan 5':2083};
+function slipFor(gross,o={}){
+  const exp={tax:Math.round(.2*Math.max(0,gross-1048)),ni:Math.round(.08*Math.max(0,gross-1048))};
+  const thr=PLAN[o.plan]||0; exp.sl=thr?Math.round(.09*Math.max(0,gross-thr)):0;
+  const tax=o.tax!==undefined?o.tax:exp.tax, ni=o.ni!==undefined?o.ni:exp.ni, sl=o.sl!==undefined?o.sl:exp.sl;
+  return {gross,tax,ni,sl,net:gross-tax-ni-sl,exp,showSl:(o.plan&&o.plan!=='None')||sl>0,plan:o.plan};
+}
+const payDoc = (p,emp) => doc('p','paper','Payslip',[
+  ['emp','Employer',emp],['gross','Gross pay',`${gbp(p.gross)} / month`],['tax','Income tax (code 1257L)',gbp(p.tax)],['ni','National Insurance',gbp(p.ni)],
+  ...(p.showSl?[['sl',`Student loan${p.plan&&p.plan!=='None'?' ('+p.plan+')':''}`,gbp(p.sl)]]:[]),
+  ['net','Take-home pay',`${gbp(p.net)} / month`]
+]);
+const grossList = (lo,hi) => { const a=[]; for(let g=lo;g<=hi;g+=50) a.push(g); return a; };
+const cents = n => Math.round(n*100)/100;
+const fullName = () => R(FIRST)+' '+R(LAST);
+
+function tTenancy(want){
+  for(let k=0;k<200;k++){
+    const nm=fullName(), emp=R(EMP);
+    const w=R([120,150,180,210,240]), rent=w*13/3;
+    const fl=want?flagSet(['deposit','holding','fee','advance','afford','bid'],1,2):flagSet(['deposit'],0,0);
+    const cands=grossList(1300,3600).filter(g=>{ const s=rent/slipFor(g).net; return fl.afford? (s>.45&&s<.6) : (s>.22&&s<.38); });
+    if(!cands.length) continue;
+    const gross=R(cands), p=slipFor(gross);
+    const weeks=fl.deposit?R([6,7,8]):R([4,5,5]), dep=weeks*w;
+    const hold=fl.holding?R([2,3])*w:R([w/2,w,w]);
+    const months=fl.advance?R([2,3,6]):1, advance=months*rent;
+    const advRent=fl.bid?rent-R([25,50,75]):rent;
+    const feeTypes=['Admin fee','Viewing fee','Referencing fee','Inventory check-in fee','Renewal fee','Check-out fee'];
+    const fee=fl.fee?{n:R(feeTypes),a:R([60,90,120,150,180]),where:R(['a','i'])}:null;
+    const permitted=shuffle(['Replacement keys: reasonable cost, only if you lose them','Late rent: interest at 3% above the Bank of England base rate, only after 14 days','Changes you ask for: \u00A350 maximum']).slice(0,ri(0,2));
+    const clauses=shuffle([...permitted,...(fee&&fee.where==='a'?[`${fee.n}: ${gbp(fee.a)}`]:[])]).join('; ')||'None.';
+    const docs=[
+      payDoc(p,emp),
+      doc('a','paper','Tenancy agreement',[['landlord','Landlord / agent',R(['Kestrel Lettings','Brook & Vale Homes','Oakley Property'])],['type','Tenancy type','Assured periodic (rolls month to month, no fixed end date)'],['rent','Rent',`${gbp(rent)} per month (${gbp(w)} per week)`],['dep','Tenancy deposit',`${gbp(dep)}, protected in a government-approved scheme`],['clauses','Clause 14: other charges',clauses,true]]),
+      doc('i','paper','Agent\u2019s move-in costs',[['adv','Advertised rent',`${gbp(advRent)} per month`],['hold','Holding deposit already paid',gbp(hold)],['first','Rent in advance',`${gbp(advance)} (${months} month${months>1?'s':''})`],['other','Other charges',fee&&fee.where==='i'?`${fee.n}: ${gbp(fee.a)}`:'None']])
+    ];
+    const discs=[];
+    if(dep>5*w) discs.push(D('Deposit over 5 weeks\u2019 rent','Tenant Fees Act limits',['a:dep','a:rent'],`5 \u00D7 ${gbp(w)} = ${gbp(5*w)} is the most a landlord can ask for. This deposit is ${gbp(dep)} (${weeks} weeks).`));
+    if(hold>w) discs.push(D('Holding deposit over 1 week\u2019s rent','Tenant Fees Act limits',['i:hold','a:rent'],`A holding deposit is capped at one week\u2019s rent (${gbp(w)}). This one is ${gbp(hold)}.`));
+    if(fee) discs.push(D('Banned fee','Tenant Fees Act limits',[fee.where+':'+(fee.where==='a'?'clauses':'other')],`${fee.n}s are banned under the Tenant Fees Act 2019. Agents can only charge rent, a capped deposit, a capped holding deposit and a few permitted costs.`));
+    if(months>1) discs.push(D('Too much rent in advance','Tenant Fees Act limits',['i:first'],`Since 1 May 2026 landlords can only ask for one month\u2019s rent up front. This asks for ${months}.`));
+    if(advRent<rent) discs.push(D('Rent higher than advertised','Tenant Fees Act limits',['i:adv','a:rent'],`It was advertised at ${gbp(advRent)} but the agreement says ${gbp(rent)}. Landlords can\u2019t ask for more than the advertised rent.`));
+    if(rent>.4*p.net) discs.push(D('Rent over 40% of take-home','Affordability',['a:rent','p:net'],`40% of ${gbp(p.net)} is ${gbp(cents(.4*p.net))}. The rent is ${gbp(rent)}, which is ${Math.round(rent/p.net*100)}%.`));
+    if((discs.length>0)!==want) continue;
+    return C({clerk:`${nm} wants to rent a flat. Check the paperwork.`,verdict:want?'DENY':'APPROVE',docs,discs,groups:['pay','rent'],concept:'Tenant Fees Act limits',
+      rationale:`Rent is ${Math.round(rent/p.net*100)}% of take-home (limit 40%). The deposit is ${weeks} weeks\u2019 rent (limit 5), the holding deposit is ${hold===w?'exactly one week':'under one week'}, only one month is due up front, and no banned fees appear. Late-rent interest, lost keys and \u00A350 changes are allowed.`});
+  }
+  throw new Error('tenancy gen failed');
+}
+
+function tPCP(want){
+  for(let k=0;k<200;k++){
+    const nm=fullName(), emp=R(EMP);
+    const gross=R(grossList(1500,3600)), p=slipFor(gross), net=p.net, cap=.2*net;
+    const fl=want?flagSet(['afford','fee','mileage','apr'],1,2):flagSet(['afford'],0,0);
+    if(fl.afford&&fl.fee) fl.fee=false;
+    let pay,F=0;
+    if(fl.afford) pay=r5(Math.ceil(cap*ri(125,160)/100));
+    else if(fl.fee){ pay=Math.floor((cap-2)/5)*5; F=R([15,20,25]); }
+    else { pay=Math.floor(cap*ri(60,95)/100/5)*5; F=chance(.3)?R([10,12]):0; if(pay+F>cap) F=0; }
+    if(pay<150) continue;
+    const term=R([36,48]); let rate=R([8,10,12]), m, A;
+    if(fl.mileage){ m=R([12000,15000,18000]); A=R([5000,6000,8000]); }
+    else if(chance(.3)){ m=R([9000,10000,12000]); A=m-1000; rate=6; }
+    else { m=R([6000,8000,9000,10000,12000]); A=m+R([0,1000,2000,3000]); }
+    const apr=fl.apr?R([27.9,29.9,34.9,39.9]):R([6.9,8.9,9.9,12.9,14.9]);
+    const n=x=>x.toLocaleString('en-GB');
+    const docs=[
+      payDoc(p,emp),
+      doc('a','paper','Finance application',[['who','Applicant',nm],['car','Car',R(['Used hatchback','Nearly-new SUV','Electric hatchback'])],['miles','Expected annual mileage',`${n(m)} miles${m>=12000?' (mostly commuting)':''}`]]),
+      doc('c','paper','PCP contract',[['pay','Monthly payment',gbp(pay)],['term','Term',`${term} months`],['dep','Deposit',gbp(R([500,1000,1500]))],['apr','Representative APR',`${apr}%`],['gmfv','Optional final payment',gbp(R([6500,7200,7800,8400,9000]))],['mil','Section 9: Mileage',`Allowance ${n(A)} miles a year. Excess mileage charged at ${rate}p per mile.`,true],['fee','Section 11: Fees',F?`Monthly account fee of ${gbp(F)} added to each payment.`:'No monthly account fee.',true]])
+    ];
+    const excess=Math.max(0,m-A)*(term/12)*rate/100;
+    const discs=[];
+    if(pay+F>cap){
+      const hidden=F>0&&pay<=cap;
+      discs.push(D(hidden?'Monthly fee pushes payment over 20%':'Payment over 20% of take-home',hidden?'Hidden monthly fees':'Affordability',['c:pay',...(F?['c:fee']:[]),'p:net'],`${F?`${gbp(pay)} + ${gbp(F)} fee = ${gbp(pay+F)}`:`Payment ${gbp(pay)}`}. 20% of take-home (${gbp(net)}) is ${gbp(cents(cap))}.`));
+    }
+    if(excess>=500) discs.push(D('Mileage allowance far too low','PCP mileage limits',['a:miles','c:mil','c:term'],`${n(m)} expected \u2212 ${n(A)} allowed = ${n(m-A)} extra miles a year. \u00D7 ${term/12} years \u00D7 ${rate}p = about ${gbp(Math.round(excess))} in charges, well over the \u00A3500 limit.`));
+    if(apr>25) discs.push(D('APR over 25%','APR and the cost of credit',['c:apr'],`${apr}% is above the 25% limit.`));
+    if((discs.length>0)!==want) continue;
+    return C({clerk:`${nm} wants a car on PCP finance.`,verdict:want?'DENY':'APPROVE',docs,discs,groups:['pay','car'],concept:'Checking affordability',
+      rationale:`Payment ${F?`plus fee (${gbp(pay+F)})`:gbp(pay)} is within 20% of take-home (cap ${gbp(cents(cap))}), expected excess mileage costs ${excess?`about ${gbp(Math.round(excess))}, under`:'nothing, under'} the \u00A3500 limit, and the APR of ${apr}% is under 25%.`});
+  }
+  throw new Error('pcp gen failed');
+}
+
+function tPay(want){
+  for(let k=0;k<200;k++){
+    const nm=fullName(), emp=R(EMP);
+    const flaw=want?R(['slbelow','slnoplan','taxwrong','niwrong','mismatch','slmissing']):null;
+    const plan=flaw==='slnoplan'?'None':(flaw==='slbelow'||flaw==='slmissing')?R(['Plan 2','Plan 5']):R(['Plan 2','Plan 5','None']);
+    const thr=PLAN[plan]||0;
+    const below=plan==='Plan 2'?[1650,1850,2050,2250,2400]:[1500,1750,1950,2050];
+    const above=plan==='Plan 2'?[2600,2800,3000,3250]:[2200,2400,2600,2850];
+    let gross;
+    if(flaw==='slbelow') gross=R(below); else if(flaw==='slmissing') gross=R(above);
+    else if(plan==='None') gross=R([1600,1900,2200,2600,3000]); else gross=chance(.5)?R(above):R(below);
+    const o={plan};
+    if(flaw==='slbelow') o.sl=R([18,27,36,45]);
+    if(flaw==='slnoplan') o.sl=R([36,45,63,81]);
+    if(flaw==='slmissing') o.sl=0;
+    if(flaw==='taxwrong') o.tax=chance(.5)?Math.round(.4*(gross-1048)):0;
+    if(flaw==='niwrong') o.ni=chance(.5)?Math.round(.12*(gross-1048)):0;
+    const p=slipFor(gross,o);
+    const appGross=flaw==='mismatch'?Math.round(gross*R([1.15,1.25,1.4])/50)*50:gross;
+    const docs=[
+      payDoc(p,emp),
+      doc('n','web','HMRC tax code notice',[['code','Tax code','1257L'],['plan','Student loan plan on file',plan],['thr','Student loan monthly threshold',plan==='None'?'Not applicable':`${gbp(thr)} (${plan})`]]),
+      doc('a','paper','Rental application',[['who','Applicant',nm],['emp','Employer',emp],['gross','Gross pay declared',`${gbp(appGross)} / month`]])
+    ];
+    const discs=[], e=p.exp;
+    if(Math.abs(p.tax-e.tax)>2) discs.push(D('Income tax does not match the tax code','Payslip checks',['p:tax','p:gross','n:code'],`On code 1257L, tax is 20% of pay above \u00A31,048: 20% \u00D7 (${gbp(gross)} \u2212 \u00A31,048) = ${gbp(e.tax)}. The payslip shows ${gbp(p.tax)}.`));
+    if(Math.abs(p.ni-e.ni)>2) discs.push(D('National Insurance does not add up','Payslip checks',['p:ni','p:gross'],`Employee NI is 8% of pay above \u00A31,048: 8% \u00D7 (${gbp(gross)} \u2212 \u00A31,048) = ${gbp(e.ni)}. The payslip shows ${gbp(p.ni)}.`));
+    if(p.sl!==e.sl){
+      if(e.sl===0&&p.sl>0){
+        if(plan==='None') discs.push(D('Student loan taken with no plan on file','Payslip checks',['p:sl','n:plan'],'No student loan plan is on file, so nothing should be deducted.'));
+        else discs.push(D('Student loan taken below the threshold','Payslip checks',['p:sl','p:gross','n:thr'],`${plan} only starts above ${gbp(thr)} a month. Pay is ${gbp(gross)}, so nothing should come out. A deduction means the payslip is wrong or altered.`));
+      } else if(e.sl>0&&p.sl===0) discs.push(D('Student loan missing','Payslip checks',['p:sl','p:gross','n:thr'],`${plan} takes 9% of pay above ${gbp(thr)}: 9% \u00D7 (${gbp(gross)} \u2212 ${gbp(thr)}) = ${gbp(e.sl)}. The payslip shows \u00A30.`));
+      else discs.push(D('Student loan amount is wrong','Payslip checks',['p:sl'],`Expected ${gbp(e.sl)}, payslip shows ${gbp(p.sl)}.`));
+    }
+    if(Math.abs(appGross-gross)/gross>.05) discs.push(D('Declared pay does not match payslip','Verifying income',['a:gross','p:gross'],`The application says ${gbp(appGross)} but the payslip says ${gbp(gross)}.`));
+    if((discs.length>0)!==want) continue;
+    return C({clerk:`${nm} sent this payslip as proof of income for a rental application.`,verdict:want?'DENY':'APPROVE',docs,discs,groups:['pay'],concept:'Payslip checks',
+      tip:want?'A payslip that does not add up is referred to the verification team rather than trusted.':'',
+      rationale:`Tax (${gbp(p.tax)}) and National Insurance (${gbp(p.ni)}) match the 1257L code. ${plan==='None'?'No student loan plan is on file, so nothing is taken.':p.sl?`${plan} correctly takes ${gbp(p.sl)}, because pay is above ${gbp(thr)}.`:`${plan} takes nothing, because pay is below ${gbp(thr)}.`} The application matches the payslip.`});
+  }
+  throw new Error('pay gen failed');
+}
+
+function tCard(want){
+  for(let k=0;k<200;k++){
+    const nm=fullName(), emp=R(EMP);
+    const gross=R(grossList(1400,3200)), p=slipFor(gross), net=p.net;
+    const fl=want?flagSet(['apr','fee','limit'],1,2):flagSet(['apr'],0,0);
+    const apr=fl.apr?R([39.9,44.9,49.9]):R([18.9,19.9,21.9,24.9]);
+    const fee=fl.fee?R([8,9,12,15]):0;
+    const limit=fl.limit?Math.round(net*R([1.5,1.6,2])/100)*100:Math.floor(net*R([.4,.5,.75,.9,1])/100)*100;
+    if(limit<200) continue;
+    const docs=[
+      payDoc(p,emp),
+      doc('a','paper','Card application',[['who','Applicant',`${nm} (18)`],['use','Card type','First credit card'],['req','Credit limit requested',gbp(limit)]]),
+      doc('c','paper','Card agreement',[['apr','Representative APR',`${apr}%`],['limit','Credit limit offered',gbp(limit)],['rep','Minimum monthly repayment','2% of balance (minimum \u00A35)'],['fee','Section 6: Account charges',fee?`Monthly account fee of ${gbp(fee)}, added to your statement.`:'No monthly account fee.',true]])
+    ];
+    const discs=[];
+    if(apr>25) discs.push(D('APR over 25%','APR and the cost of credit',['c:apr'],`${apr}% is above the 25% limit.`));
+    if(fee>0) discs.push(D('Monthly account fee','Hidden monthly fees',['c:fee'],`A ${gbp(fee)} monthly fee costs ${gbp(fee*12)} a year just for holding the card. Any monthly fee means deny.`));
+    if(limit>net) discs.push(D('Credit limit above one month\u2019s take-home','Affordability',['c:limit','p:net'],`The limit is ${gbp(limit)}. One month\u2019s take-home is ${gbp(net)}.`));
+    if((discs.length>0)!==want) continue;
+    return C({clerk:`${nm} (18) has applied for a first credit card.`,verdict:want?'DENY':'APPROVE',docs,discs,groups:['pay','card'],concept:'APR and the cost of credit',
+      rationale:`The APR of ${apr}% is under 25%, there is no monthly fee, and the ${gbp(limit)} limit is within one month\u2019s take-home (${gbp(net)}).`});
+  }
+  throw new Error('card gen failed');
+}
+
+const HARD_T=[tPCP,tPCP,tTenancy,tTenancy,tPay,tPay,tCard];
+function buildHard(){
+  const types=[...HARD_T,R([tPCP,tTenancy,tPay,tCard])];
+  const deny=new Set(shuffle([0,1,2,3,4,5,6,7]).slice(0,4));
+  return shuffle(types.map((t,i)=>t(deny.has(i))));
+}
+/*GEN-END*/
+
+/* ===================== Game ===================== */
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+
+const CFG = {
+  easy:{ name:'The Scam Checker', start:25, floor:15, shaveBy:2, strikes:3, quota:6, base:100 },
+  hard:{ name:'The Underwriter',  start:50, floor:35, shaveBy:2, strikes:3, quota:5, base:200 }
+};
+const RULES = {
+  easy:{ g:{t:'Spotting the trap',r:[
+    'The real website name is the last part of the address before the first single slash. Words added at the front, like discord-gifts., do not make it real. Spelling tricks do not either. UK government sites end in .gov.uk.',
+    'Never enter a password, PIN or card details on a page you reached from an unexpected message. Go to the site yourself.',
+    'Brand-new accounts and brand-new websites are a warning sign.',
+    'Real deadlines are days away. Scammers give you minutes.',
+    'Never pay money to receive money or a prize. Never pay outside an app\u2019s checkout.',
+    'Names, numbers, tracking numbers and carriers must match what you already have.'
+  ]}},
+  hard:{
+    pay:{t:'Payslips and income',r:[
+      'Take-home pay is the last line of the payslip. Use it, never gross pay.',
+      'A payslip must add up. Income tax is 20% and National Insurance is 8% of gross pay above \u00A31,048 a month (tax code 1257L).',
+      'Student loan is 9% of gross pay above the monthly threshold on the tax notice, and only if a plan is on file. Otherwise nothing is taken.',
+      'Pay on the application must match the payslip (within 5%).',
+      'A payslip that does not add up: DENY and refer for checks.'
+    ]},
+    rent:{t:'Renting in England',r:[
+      'Rent must not exceed 40% of take-home pay.',
+      'Deposit: maximum 5 weeks\u2019 rent. Holding deposit: maximum 1 week\u2019s rent.',
+      'Banned: admin, viewing, referencing, inventory, renewal and check-out fees. Allowed: lost keys at reasonable cost, late-rent interest after 14 days, \u00A350 for changes you ask for.',
+      'Rent in advance: maximum 1 month. Rent cannot be higher than advertised.'
+    ]},
+    car:{t:'Car finance (PCP)',r:[
+      'Monthly payment plus any monthly fees must not exceed 20% of take-home pay.',
+      'Expected excess-mileage charges over the whole term must be under \u00A3500. Extra miles per year \u00D7 years \u00D7 rate per mile.',
+      'APR above 25%: DENY.'
+    ]},
+    card:{t:'Credit cards',r:[
+      'APR above 25%: DENY.',
+      'Any monthly account fee: DENY.',
+      'The credit limit must not exceed one month\u2019s take-home pay.'
+    ]}
+  }
+};
+
+const S = { status:'idle', mode:'easy', cfg:CFG.easy, pending:[], cur:null, heldCase:null, total:0, handled:0,
+  shave:0, limit:25, caseT:0, resolving:false, strikes:0, correct:0, streak:0, score:0, history:[],
+  flags:new Set(), sound:true, extra:false, z:20 };
+const desk = $('#desk'), slip = $('#slip');
+
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove('show'),2600); }
+function best(mode){ try{ return +localStorage.getItem('auditdesk-uk-best-'+mode)||0; }catch(e){ return 0; } }
+function saveBest(mode,v){ try{ if(v>best(mode)) localStorage.setItem('auditdesk-uk-best-'+mode,String(v)); }catch(e){} }
+let ac;
+function thud(){
+  if(!S.sound) return;
+  try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    const o=ac.createOscillator(), g=ac.createGain(), t=ac.currentTime;
+    o.type='square'; o.frequency.setValueAtTime(150,t); o.frequency.exponentialRampToValueAtTime(40,t+.12);
+    g.gain.setValueAtTime(.22,t); g.gain.exponentialRampToValueAtTime(.001,t+.16);
+    o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t+.17);
+  }catch(e){}
+}
+
+function pace(){ const c=S.cfg; let p=Math.max(c.floor,c.start-S.shave*c.shaveBy); if(S.extra) p=Math.round(p*1.5); return p; }
+
+function calcPoints({correct,verdict,secs,par,streakBefore,hits,base}){
+  if(!correct) return verdict==='APPROVE' ? -150 : -75;
+  const speed = 1 + 0.5*Math.max(0,1-secs/par);
+  const streak = Math.min(1+0.1*streakBefore,1.5);
+  return Math.round(base*speed*streak + hits*25);
+}
+
+/* ---------- HUD ---------- */
+function hud(){
+  const c=S.cfg, left=Math.max(0,S.limit-S.caseT);
+  $('#timer').textContent=Math.ceil(left);
+  $('#timer-label').textContent='seconds left (pace: '+pace()+'s per case)';
+  const warn=S.status==='playing'&&left<=6;
+  $('#timer').classList.toggle('warn',warn);
+  $('#timefill').style.width=(S.limit?left/S.limit*100:100)+'%';
+  $('#timefill').classList.toggle('warn',warn);
+  $('#score').textContent=S.score;
+  $('#quota-n').textContent=S.correct+'/'+c.quota;
+  $('#quota-fill').style.width=Math.min(100,S.correct/c.quota*100)+'%';
+  const st=$('#strikes');
+  if(st.children.length!==c.strikes){ st.innerHTML=''; for(let i=0;i<c.strikes;i++){const d=document.createElement('div');d.className='slot';d.textContent='\u2715';st.appendChild(d);} }
+  [...st.children].forEach((d,i)=>d.classList.toggle('on',i<S.strikes));
+  $('#strike-label').textContent='Strikes ('+S.strikes+' of '+c.strikes+')';
+}
+
+/* ---------- Rulebook ---------- */
+function renderRules(groups){
+  const set=RULES[S.mode];
+  $('#rules').innerHTML=Object.keys(set).map(k=>{
+    const g=set[k], open=groups.includes(k)?' open':'';
+    return '<details'+open+'><summary>'+esc(g.t)+'</summary><ol>'+g.r.map(r=>'<li>'+esc(r)+'</li>').join('')+'</ol></details>';
+  }).join('');
+}
+
+/* ---------- Calculator ---------- */
+const calc={expr:''};
+function calcShow(){ $('#calc-out').textContent=calc.expr===''?'0':calc.expr.replace(/\*/g,'\u00D7').replace(/\//g,'\u00F7'); }
+function calcIn(tok){
+  if(calc.expr==='Error') calc.expr='';
+  if(/[\d.%]$/.test(calc.expr)) calc.expr=calc.expr.replace(/[\d.]+%?$/,'');
+  calc.expr+=tok; calcShow();
+}
+(function buildCalc(){
+  const keys=['7','8','9','/','4','5','6','*','1','2','3','-','0','.','%','+','C','\u232B','(',')','='];
+  $('#calc-keys').innerHTML=keys.map(k=>'<button type="button" class="'+(k==='='?'eq':'+-*/'.includes(k)?'op':'')+'" data-k="'+k+'" aria-label="'+(k==='*'?'times':k==='/'?'divide':k==='\u232B'?'backspace':k)+'">'+(k==='*'?'\u00D7':k==='/'?'\u00F7':k)+'</button>').join('');
+  $('#calc-keys').addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b) return; const k=b.dataset.k;
+    if(k==='C') calc.expr='';
+    else if(k==='\u232B') calc.expr=calc.expr==='Error'?'':calc.expr.slice(0,-1);
+    else if(k==='='){
+      try{
+        const safe=calc.expr.replace(/(\d+(?:\.\d+)?)%/g,'($1/100)');
+        if(!/^[0-9+\-*/.() ]+$/.test(safe)||safe==='') throw 0;
+        const v=Function('"use strict";return ('+safe+')')();
+        if(!isFinite(v)) throw 0;
+        calc.expr=String(Math.round(v*10000)/10000);
+      }catch(err){ calc.expr='Error'; setTimeout(()=>{ if(calc.expr==='Error'){calc.expr='';calcShow();} },700); }
+    } else { if(calc.expr==='Error') calc.expr=''; calc.expr+=k; }
+    calcShow();
+  });
+})();
+
+function numify(s){
+  return s.replace(/\u00A3\d[\d,]*(?:\.\d+)?|\d[\d,]*(?:\.\d+)?%|\b\d+p\b|\d[\d,]*(?= miles)|\d+(?= months?\b)|\d+(?= weeks?\b)/g, m=>{
+    let n=m.replace(/[\u00A3,]/g,''); if(n.endsWith('p')) n=String(+n.slice(0,-1)/100);
+    return '<span class="num" data-n="'+n+'">'+m+'</span>';
+  });
+}
+
+/* ---------- Shift flow ---------- */
+function startShift(mode){
+  S.mode=mode; S.cfg=CFG[mode]; S.extra=$('#extra').checked;
+  const all=mode==='easy'?buildEasy():buildHard();
+  S.pending=all.slice(); S.total=all.length; S.cur=S.pending.shift(); S.heldCase=null; S.handled=0; S.shave=0;
+  S.resolving=false; S.strikes=0; S.correct=0; S.streak=0; S.score=0; S.history=[]; S.status='playing';
+  $('#calc').hidden = mode!=='hard'; calc.expr=''; calcShow();
+  $('#tray-note').textContent = mode==='hard'
+    ? 'Drag a stamp onto the slip. Click a line to flag it. Click an underlined number to send it to the calculator. Zoom to read fine print.'
+    : 'Drag a stamp onto the slip. Drag papers by their title bar. Click a line to flag it. Zoom to read fine print.';
+  ['menu','report','summary'].forEach(id=>$('#'+id).classList.remove('open'));
+  loadCase(); hud();
+}
+
+function loadCase(){
+  const c=S.cur; c.flags=c.flags||new Set(); S.flags=c.flags;
+  S.caseT=0; S.limit=pace(); S.resolving=false;
+  desk.querySelectorAll('.doc,.ink').forEach(e=>e.remove());
+  slip.classList.remove('over'); $('#slip-box').style.display='grid';
+  $('#req-text').textContent='Clerk: '+c.clerk;
+  const label='Case '+Math.min(S.handled+1,S.total)+' of '+S.total;
+  $('#req-count').textContent=label; $('#slip-case').textContent=label;
+  renderRules(c.groups);
+  const n=c.docs.length, dw=desk.clientWidth;
+  const docW = dw<620?250 : dw<900?300 : 350, slipW=250;
+  let step=docW+14;
+  if(14+(n-1)*step+docW > dw-slipW-16) step=Math.max(34,(dw-slipW-16-14-docW)/(n-1));
+  const hard=S.mode==='hard';
+  c.docs.forEach((d,i)=>{
+    const el=document.createElement('article');
+    el.className='doc enter skin-'+d.skin; el.dataset.layer=d.id;
+    el.style.cssText='left:'+(14+i*step)+'px;top:'+(14+(i%2)*28)+'px;width:'+docW+'px;--dw:'+docW+'px;--rot:'+((Math.random()*4-2).toFixed(1))+'deg;--delay:'+(i*0.12)+'s;z-index:'+(10+i);
+    el.innerHTML='<header class="dh"><span>'+esc(d.title)+'</span><button class="zoom" type="button" aria-label="Zoom '+esc(d.title)+'">Zoom</button></header><div class="db">'+
+      d.rows.map(r=>{
+        const key=d.id+':'+r.id, fl=c.flags.has(key);
+        return '<div class="row'+(r.f?' fine':'')+(fl?' flagged':'')+'" data-key="'+key+'" tabindex="0" role="button" aria-pressed="'+fl+'"><span class="lbl">'+esc(r.l)+'</span><span class="val">'+(hard?numify(esc(r.v)):esc(r.v))+'</span></div>';
+      }).join('')+'</div>';
+    wireDoc(el); desk.appendChild(el);
+  });
+  renderHold();
+}
+
+function bring(el){ el.style.zIndex=++S.z; }
+
+function wireDoc(el){
+  const head=el.querySelector('.dh');
+  el.addEventListener('pointerdown',()=>bring(el));
+  el.querySelector('.zoom').addEventListener('click',e=>{
+    e.stopPropagation(); el.classList.toggle('zoomed'); bring(el);
+    e.currentTarget.textContent=el.classList.contains('zoomed')?'Shrink':'Zoom';
+    el.style.left=clamp(el.offsetLeft,0,Math.max(0,desk.clientWidth-el.offsetWidth-10))+'px';
+  });
+  head.addEventListener('pointerdown',e=>{
+    if(e.target.closest('.zoom')) return;
+    const sx=e.clientX, sy=e.clientY, ox=el.offsetLeft, oy=el.offsetTop;
+    el.classList.remove('enter'); el.classList.add('dragging');
+    head.setPointerCapture(e.pointerId);
+    const move=ev=>{
+      el.style.left=clamp(ox+ev.clientX-sx,-el.offsetWidth+70,desk.clientWidth-70)+'px';
+      el.style.top=clamp(oy+ev.clientY-sy,0,desk.clientHeight-36)+'px';
+    };
+    const up=()=>{ el.classList.remove('dragging'); head.removeEventListener('pointermove',move); head.removeEventListener('pointerup',up); head.removeEventListener('pointercancel',up); };
+    head.addEventListener('pointermove',move); head.addEventListener('pointerup',up); head.addEventListener('pointercancel',up);
+  });
+  el.querySelectorAll('.row').forEach(r=>{
+    const toggle=()=>{
+      if(S.resolving||S.status!=='playing') return;
+      const k=r.dataset.key;
+      if(S.flags.has(k)) S.flags.delete(k); else S.flags.add(k);
+      r.classList.toggle('flagged',S.flags.has(k));
+      r.setAttribute('aria-pressed',S.flags.has(k));
+    };
+    r.addEventListener('click',e=>{
+      const n=e.target.closest('.num');
+      if(n&&S.mode==='hard'){ calcIn(n.dataset.n); return; }
+      toggle();
+    });
+    r.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); toggle(); } });
+  });
+}
+
+/* ---------- Hold tray ---------- */
+function renderHold(){
+  const btn=$('#hold-btn'), slot=$('#hold-slot');
+  if(S.heldCase){ slot.textContent='On hold: '+S.heldCase.clerk; btn.textContent='Swap with held case'; }
+  else { slot.textContent='Hold tray is empty'; btn.textContent='Hold this case'; }
+  let why='';
+  if(S.status!=='playing'||S.resolving) why='Finish this case first.';
+  else if(S.cur&&S.cur.usedHold) why='This case has already been on hold once. Stamp it.';
+  else if(!S.heldCase&&!S.pending.length) why='No other cases are waiting.';
+  btn.disabled=!!why; btn.title=why;
+}
+function holdAction(){
+  if(S.status!=='playing'||S.resolving) return;
+  if(S.cur.usedHold){ toast('This case has already been on hold once. Stamp it.'); return; }
+  if(!S.heldCase){
+    if(!S.pending.length){ toast('No other cases are waiting.'); return; }
+    S.cur.usedHold=true; S.heldCase=S.cur; S.cur=S.pending.shift();
+  } else {
+    S.cur.usedHold=true; const t=S.heldCase; S.heldCase=S.cur; S.cur=t;
+  }
+  toast('Fresh timer. The held case comes back with no speed bonus.');
+  loadCase(); hud();
+}
+$('#hold-btn').addEventListener('click',holdAction);
+
+/* ---------- Stamping ---------- */
+function shakeEl(el){ el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); setTimeout(()=>el.classList.remove('shake'),420); }
+
+function tryStamp(verdict,x,y){
+  if(S.status!=='playing'||S.resolving) return;
+  const r=slip.getBoundingClientRect();
+  if(x<r.left||x>r.right||y<r.top||y>r.bottom) return;
+  const top=document.elementsFromPoint(x,y).map(e=>e.closest('[data-layer]')).find(Boolean);
+  if(!top||top.dataset.layer!=='slip'){
+    if(top) shakeEl(top);
+    toast('Something is covering the slip. Move the paper out of the way first.');
+    return;
+  }
+  doStamp(verdict,x-r.left,y-r.top);
+}
+
+function doStamp(verdict,rx,ry){
+  const c=S.cur; S.resolving=true;
+  const correct = verdict===c.verdict;
+  const hits = c.discs.filter(d=>d.refs.some(k=>S.flags.has(k))).length;
+  const par = S.limit*0.6;
+  const before=pace();
+  const pts = calcPoints({correct,verdict,secs:c.usedHold?par:S.caseT,par,streakBefore:S.streak,hits,base:S.cfg.base});
+  let paceNote='';
+  if(correct){ S.correct++; S.streak++; if(S.streak%3===0){ S.shave++; const a=pace(); if(a<before) paceNote='Streak of '+S.streak+'! Cases now get '+a+' seconds.'; } }
+  else { S.strikes++; S.streak=0; }
+  S.score=Math.max(0,S.score+pts);
+  const h={c,verdict,correct,hits,pts,flagged:new Set(S.flags),paceNote};
+  S.history.push(h);
+  $('#slip-box').style.display='none';
+  const ink=document.createElement('div');
+  ink.className='ink '+(verdict==='APPROVE'?'approve':'deny');
+  ink.textContent=verdict==='APPROVE'?'APPROVED':'DENIED';
+  ink.style.left=clamp(rx,60,slip.offsetWidth-60)+'px'; ink.style.top=clamp(ry,40,slip.offsetHeight-30)+'px';
+  ink.style.setProperty('--r',((Math.random()-.5)*16).toFixed(1)+'deg');
+  slip.appendChild(ink);
+  desk.classList.remove('thump'); void desk.offsetWidth; desk.classList.add('thump');
+  thud(); hud(); renderHold();
+  setTimeout(()=>showReport(h),800);
+}
+
+function timeout(){
+  if(S.resolving||S.status!=='playing') return;
+  S.resolving=true; S.strikes++; S.streak=0;
+  const h={c:S.cur,verdict:null,timeout:true,correct:false,hits:0,pts:0,flagged:new Set(S.flags),paceNote:''};
+  S.history.push(h); hud(); renderHold();
+  setTimeout(()=>showReport(h),250);
+}
+
+function showReport(h){
+  const c=h.c;
+  let html='<h2 class="'+(h.correct?'ok':'bad')+'">'+(h.correct?'Correct call':h.timeout?'Out of time. Strike '+S.strikes:'Wrong call. Strike '+S.strikes)+'</h2>';
+  html+='<p class="lead">'+(h.timeout?'Here is what you would have found. The right answer was ':'The right answer was ')+'<b>'+c.verdict+'</b>.</p>';
+  html+='<p class="pts '+(h.pts>=0?'pos':'neg')+'">'+(h.pts>=0?'+':'')+h.pts+' points'+(h.correct&&h.hits?' <span class="dim" style="font-size:18px;font-weight:500">(includes '+h.hits*25+' flag bonus)</span>':'')+'</p>';
+  if(h.paceNote) html+='<p><b>'+esc(h.paceNote)+'</b></p>';
+  if(c.verdict==='DENY'){
+    html+='<ul class="finds">'+c.discs.map(d=>{
+      const hit=d.refs.some(k=>h.flagged.has(k));
+      return '<li class="'+(hit?'hit':'miss')+'"><b>'+esc(d.title)+'</b><em>'+(hit?'You flagged this':'You did not flag this')+'</em><p>'+esc(d.explain)+'</p></li>';
+    }).join('')+'</ul>';
+    if(c.tip) html+='<p class="dim">Tip: '+esc(c.tip)+'</p>';
+  } else {
+    html+='<p>'+esc(c.rationale)+'</p>';
+    if(h.flagged.size) html+='<p class="dim">You flagged '+h.flagged.size+' line'+(h.flagged.size>1?'s':'')+' on a clean case. Flags are free, but check each line against the rulebook before treating it as a problem.</p>';
+  }
+  html+='<button class="btn" id="next-btn">'+(S.strikes>=S.cfg.strikes?'See results':'Next case')+'</button>';
+  $('#report-body').innerHTML=html;
+  $('#report').classList.add('open');
+  $('#next-btn').addEventListener('click',next);
+  $('#next-btn').focus();
+}
+
+function next(){
+  $('#report').classList.remove('open');
+  S.handled++;
+  if(S.strikes>=S.cfg.strikes) return endShift('strikes');
+  if(S.pending.length) S.cur=S.pending.shift();
+  else if(S.heldCase){ S.cur=S.heldCase; S.heldCase=null; }
+  else return endShift('queue');
+  loadCase(); hud();
+}
+
+function endShift(reason){
+  if(S.status==='shift_over') return;
+  S.status='shift_over'; S.resolving=false; hud(); renderHold();
+  const won = S.correct>=S.cfg.quota && S.strikes<S.cfg.strikes;
+  saveBest(S.mode,S.score);
+  const max=S.total*S.cfg.base*1.5, ratio=S.score/max;
+  const stars = won ? (ratio>0.6?3:ratio>0.35?2:1) : 0;
+  const why = reason==='strikes' ? 'You hit the strike limit.' : 'You cleared every case in the queue.';
+  const tally={};
+  S.history.forEach(h=>{
+    if(!h.correct){ if(h.c.verdict==='DENY') h.c.discs.forEach(d=>tally[d.concept]=(tally[d.concept]||0)+1); else if(h.c.concept) tally[h.c.concept]=(tally[h.c.concept]||0)+1; }
+    else h.c.discs.forEach(d=>{ if(!d.refs.some(k=>h.flagged.has(k))) tally[d.concept]=(tally[d.concept]||0)+0.5; });
+  });
+  const gaps=Object.entries(tally).sort((a,b)=>b[1]-a[1]).map(e=>e[0]);
+  let html='<h2 class="'+(won?'ok':'bad')+'">'+(won?'Shift passed':'Shift failed')+'</h2><p class="lead">'+why+' '+(won?'You made quota.':'You needed '+S.cfg.quota+' correct stamps with fewer than '+S.cfg.strikes+' strikes.')+'</p>';
+  if(won) html+='<div class="stars" aria-label="'+stars+' of 3 stars">'+'\u2605'.repeat(stars)+'\u2606'.repeat(3-stars)+'</div>';
+  html+='<div class="stats"><div><b>'+S.score+'</b><small>Score</small></div><div><b>'+S.correct+'/'+S.history.length+'</b><small>Correct stamps</small></div><div><b>'+best(S.mode)+'</b><small>Best score</small></div></div>';
+  html+= gaps.length ? '<p><b>Worth another look:</b></p><ul class="howto">'+gaps.map(g=>'<li>'+esc(g)+'</li>').join('')+'</ul>' : '<p>No gaps this shift. Clean work.</p>';
+  html+='<button class="btn" id="again">Play again (new cases)</button><button class="btn alt" id="change">Change mode</button>';
+  $('#summary-body').innerHTML=html;
+  $('#report').classList.remove('open');
+  $('#summary').classList.add('open');
+  $('#again').addEventListener('click',()=>startShift(S.mode));
+  $('#change').addEventListener('click',()=>{ $('#summary').classList.remove('open'); openMenu(); });
+  $('#again').focus();
+}
+
+/* ---------- Stamp drag ---------- */
+document.querySelectorAll('.stamp').forEach(btn=>{
+  btn.addEventListener('pointerdown',e=>{
+    if(S.status!=='playing'||S.resolving) return;
+    e.preventDefault();
+    const verdict=btn.dataset.verdict;
+    const ghost=btn.cloneNode(true); ghost.classList.add('ghost'); ghost.removeAttribute('aria-label');
+    document.body.appendChild(ghost);
+    const sx=e.clientX, sy=e.clientY; let moved=false;
+    const place=(x,y)=>{ ghost.style.left=x+'px'; ghost.style.top=y+'px'; };
+    place(e.clientX,e.clientY);
+    const move=ev=>{
+      if(Math.hypot(ev.clientX-sx,ev.clientY-sy)>6) moved=true;
+      place(ev.clientX,ev.clientY);
+      const r=slip.getBoundingClientRect();
+      slip.classList.toggle('over',ev.clientX>=r.left&&ev.clientX<=r.right&&ev.clientY>=r.top&&ev.clientY<=r.bottom);
+    };
+    const cleanup=()=>{ window.removeEventListener('pointermove',move); window.removeEventListener('pointerup',up); window.removeEventListener('pointercancel',cleanup); ghost.remove(); slip.classList.remove('over'); };
+    const up=ev=>{ cleanup(); if(!moved){ toast('Drag the stamp onto the decision slip.'); return; } tryStamp(verdict,ev.clientX,ev.clientY); };
+    window.addEventListener('pointermove',move); window.addEventListener('pointerup',up); window.addEventListener('pointercancel',cleanup);
+  });
+  btn.addEventListener('keydown',e=>{
+    if(e.key==='Enter'||e.key===' '){
+      e.preventDefault();
+      const r=slip.getBoundingClientRect();
+      tryStamp(btn.dataset.verdict,r.left+r.width/2,r.top+r.height*0.65);
+    }
+  });
+});
+
+/* ---------- Menu, sound ---------- */
+function openMenu(){
+  S.status='idle';
+  $('#best-easy').textContent='Best score: '+best('easy');
+  $('#best-hard').textContent='Best score: '+best('hard');
+  $('#menu').classList.add('open');
+}
+document.querySelectorAll('.mode').forEach(b=>b.addEventListener('click',()=>startShift(b.dataset.mode)));
+$('#sound').addEventListener('click',e=>{ S.sound=!S.sound; e.currentTarget.textContent=S.sound?'Sound on':'Sound off'; e.currentTarget.setAttribute('aria-pressed',S.sound); });
+
+/* ---------- Case clock (pauses during reports and when the tab is hidden) ---------- */
+let last=performance.now();
+function loop(t){
+  requestAnimationFrame(loop);
+  const dt=Math.min(0.25,(t-last)/1000||0); last=t;
+  if(S.status==='playing'&&!S.resolving&&!document.hidden){
+    S.caseT+=dt;
+    if(S.caseT>=S.limit){ S.caseT=S.limit; hud(); timeout(); return; }
+    hud();
+  }
+}
+requestAnimationFrame(loop);
+
+openMenu(); hud();
+})();
+</script>
+</body>
+</html>
